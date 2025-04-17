@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "530007486861",
+    "project_id": "xspace-a0907",
+    "storage_bucket": "xspace-a0907.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:530007486861:android:0a9d550f97e41e7c664dc4",
+        "android_client_info": {
+          "package_name": "com.meer.space"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "530007486861-oai41pqkgdghosndg4nasi2a04c3s8j2.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.meer.space",
+            "certificate_hash": "89150911b1f68ebe8e103600200eae86d93171e3"
+          }
+        },
+        {
+          "client_id": "530007486861-h92uebpasm7fnkd2u1nrh0ntisraps22.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDdmBYlnZorIu-shPOfouxeY9BO1ozPo4Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "530007486861-h92uebpasm7fnkd2u1nrh0ntisraps22.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
