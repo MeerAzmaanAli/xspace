@@ -110,16 +110,34 @@ class _HomepageState extends State<Homepage> {
       );
     }
   }
-
+  
   @override
-  Widget build(BuildContext context) {
+   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('XSpace')),
+      appBar: AppBar(
+        title: Text('XSpace'),
+      ),
+      drawer: Drawer(
+        child: ListView(
+          children: const [
+            DrawerHeader(
+              decoration: BoxDecoration(color: Colors.blue),
+              child: Text('Menu', style: TextStyle(color: Colors.white, fontSize: 24)),
+            ),
+            ListTile(
+              leading: Icon(Icons.settings),
+              title: Text('Settings'),
+            ),
+          ],
+        ),
+      ),
       body: Stack(
         children: [
-          Padding(
+           Padding(
             padding: const EdgeInsets.all(8),
             child: GridView.builder(
+              shrinkWrap: true, // ✅ Let GridView size itself
+              physics: AlwaysScrollableScrollPhysics(), // ✅ Allow scrolling
               controller: _scrollController,
               itemCount: visibleMedia.length,
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -183,7 +201,7 @@ class _HomepageState extends State<Homepage> {
             ),
           ),
         ],
-      ),
+      ),  
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           final mediaFile = await utils.pickMedia();
@@ -201,4 +219,4 @@ class _HomepageState extends State<Homepage> {
       ),
     );
   }
-}
+  }
