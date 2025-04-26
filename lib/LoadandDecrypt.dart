@@ -5,17 +5,16 @@ import 'package:http/http.dart' as http;
 import 'package:cryptography/cryptography.dart';
 import 'package:xspace/GoogleAuthClient.dart';
 import 'package:xspace/UploadandEncrypt.dart';
-import 'package:image/image.dart' as img;
 
 class MediaFile {
   final String fileId;
-  final Uint8List? thumbnailBytes; // for preview
   final String name;
+  Uint8List? decryptedBytes;
 
   MediaFile({
     required this.fileId,
     required this.name,
-    this.thumbnailBytes,
+    this.decryptedBytes,
   });
 }
 
@@ -33,69 +32,37 @@ class DriveMediaLoader {
 
   final algorithm = AesGcm.with256bits();
 
-  Future<List<MediaFile>> loadThumbnailPreviews() async {
-    final accessToken = await uploadEncrypt.getAccessToken();
-    final client = GoogleAuthClient({'Authorization': 'Bearer $accessToken'});
-    final driveApi = drive.DriveApi(client);
-
-    final encryptedFiles = await driveApi.files.list(
-      q: "'$folderId' in parents and trashed = false",
-      $fields: 'files(id, name)',
-    );
-
+  Future<void> decryptFilesSequentially(List<MediaFile> mediaList, Function(int, Uint8List?) onDecryptionComplete) async {
     final aesKey = base64Url.decode(aesKeyBase64);
     final secretKey = SecretKey(aesKey);
 
-    List<MediaFile> thumbnails = [];
+    for (int i = 0; i < mediaList.length; i++) {
+      final file = mediaList[i];
 
-    for (var file in encryptedFiles.files ?? []) {
       try {
-        // Get only first few KB of the file
-        final partialResponse = await http.get(
-          Uri.parse("https://www.googleapis.com/drive/v3/files/${file.id}?alt=media"),
+        final response = await http.get(
+          Uri.parse("https://www.googleapis.com/drive/v3/files/${file.fileId}?alt=media"),
           headers: {
             'Authorization': 'Bearer $accessToken',
-            'Range': 'bytes=0-65535' // adjust if needed
           },
         );
 
-        final partialBytes = partialResponse.bodyBytes;
+        final bytes = response.bodyBytes;
+        if (bytes.length < 28) continue;
 
-        if (partialBytes.length < 28) continue;
+        final nonce = bytes.sublist(0, 12);
+        final mac = bytes.sublist(bytes.length - 16);
+        final ciphertext = bytes.sublist(12, bytes.length - 16);
 
-        final nonce = partialBytes.sublist(0, 12);
-        final mac = partialBytes.sublist(partialBytes.length - 16);
-        final ciphertext = partialBytes.sublist(12, partialBytes.length - 16);
+        final secretBox = SecretBox(ciphertext, nonce: nonce, mac: Mac(mac));
+        final clearBytes = await algorithm.decrypt(secretBox, secretKey: secretKey);
 
-        final secretBox = SecretBox(
-          ciphertext,
-          nonce: nonce,
-          mac: Mac(mac),
-        );
-
-        final clearBytes = await algorithm.decrypt(
-          secretBox,
-          secretKey: secretKey,
-        );
-
-        // Decode image to create a thumbnail
-        final original = img.decodeImage(Uint8List.fromList(clearBytes) );
-        if (original == null) continue;
-
-        final thumbnail = img.copyResize(original, width: 300);
-        final thumbnailBytes = Uint8List.fromList(img.encodeJpg(thumbnail));
-
-        thumbnails.add(MediaFile(
-          fileId: file.id!,
-          name: file.name ?? 'Unknown',
-          thumbnailBytes: thumbnailBytes,
-        ));
+        onDecryptionComplete(i, Uint8List.fromList(clearBytes));
       } catch (e) {
-        print("Thumbnail creation failed for file ${file.name}: $e");
+        print("Decryption failed for ${file.name}: $e");
+        onDecryptionComplete(i, null);
       }
     }
-
-    return thumbnails;
   }
 
   Future<Uint8List?> decryptFullFile(String fileId) async {

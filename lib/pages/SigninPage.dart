@@ -2,7 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:xspace/GoogleAuthClient.dart';
-import 'package:xspace/pages/HomePage.dart';
+import 'package:xspace/xauth.dart';
 import 'dart:convert';
 import 'dart:math';
 import 'package:googleapis/drive/v3.dart' as drive;
@@ -46,6 +46,73 @@ class SigninPage extends StatelessWidget{
     print("Error in getOrCreateFolder: $e");
     return null;
   }
+}
+
+Future<Map<String, String>?> retrieveKeyBundle(final a) async {
+  print("setting xauth");
+  final accessToken = a;
+  if (accessToken == null) {
+    print("User not signed in.");
+    return null;
+  }
+
+
+  final client = GoogleAuthClient({'Authorization': 'Bearer $accessToken'});
+  final driveApi = drive.DriveApi(client);
+
+  try {
+    final fileList = await driveApi.files.list(
+      q: "name = 'xspace_key_bundle.txt' and trashed = false",
+      spaces: 'appDataFolder', // Important: Only search inside appDataFolder
+      $fields: 'files(id, name)',
+    );
+
+    if (fileList.files == null || fileList.files!.isEmpty) {
+      print("Key bundle file not found.");
+      return null;
+    }
+
+    final keyFile = fileList.files!.first;
+
+    final response = await driveApi.files.get(
+      keyFile.id!,
+      downloadOptions: drive.DownloadOptions.fullMedia,
+    );
+
+    final mediaStream = response as drive.Media;
+    final contents = <int>[];
+
+    await for (final chunk in mediaStream.stream) {
+      contents.addAll(chunk);
+    }
+
+    final decoded = utf8.decode(contents);
+
+
+    final lines = decoded.trim().split('\n');
+    if (lines.length < 2) {
+      print("Invalid key bundle format. Expected 2 lines (key + ID).");
+      return null;
+    }
+
+    final aesKey = lines[0].trim();
+    final folderId = lines[1].trim();
+
+    if (aesKey.isEmpty || folderId.isEmpty) {
+      print("aesKey or folderId is empty.");
+      return null;
+    }
+    return {
+      'aesKey': aesKey,
+      'folderId': folderId,
+      'accessToken': accessToken,
+    };
+  } catch (e, stacktrace) {
+    print("Error reading key bundle: $e");
+    print(stacktrace);
+  }
+
+  return null;
 }
 
   Future<void> _signInWithGoogle(BuildContext context) async {
@@ -112,11 +179,13 @@ class SigninPage extends StatelessWidget{
 
       await driveApi.files.create(fileMeta, uploadMedia: media);
       print('Key bundle created and uploaded.');
-      print(folderId);
-
 
     } else {
-      print('Encryption key found in Drive.');  
+      print('Encryption key found');  
+      final bundle = await retrieveKeyBundle(credential.accessToken);
+      XAuth.instance.key = bundle!['aesKey'];
+      XAuth.instance.accessToken = bundle['accessToken'];
+      XAuth.instance.folderId = bundle['folderId'];
     }
     // Now you have `aesKey` to use for encryption/decryption.
 
@@ -133,8 +202,6 @@ class SigninPage extends StatelessWidget{
   }
  
 }
-
-
 
   @override
   Widget build(BuildContext context) {
