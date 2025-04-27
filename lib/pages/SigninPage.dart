@@ -16,6 +16,7 @@ String generateAESKey() {
 
 class SigninPage extends StatelessWidget{
   const SigninPage({super.key});
+
  Future<String?> getOrCreateFolder(String folderName, String accessToken) async {
   try {
     final client = GoogleAuthClient({'Authorization': 'Bearer $accessToken'});
@@ -115,7 +116,7 @@ Future<Map<String, String>?> retrieveKeyBundle(final a) async {
   return null;
 }
 
-  Future<void> _signInWithGoogle(BuildContext context) async {
+ Future<void> signInWithGoogle(BuildContext context) async {
   try {
     final GoogleSignIn googleSignIn = GoogleSignIn(
       scopes: [
@@ -196,9 +197,7 @@ Future<Map<String, String>?> retrieveKeyBundle(final a) async {
 
   } catch (e) {
     print('Error during Google sign-in or key setup: $e');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Sign in failed')),
-    );
+  
   }
  
 }
@@ -224,7 +223,7 @@ Future<Map<String, String>?> retrieveKeyBundle(final a) async {
               ),
               SizedBox(height: 48),
               ElevatedButton.icon(
-                onPressed:() => _signInWithGoogle(context),
+                onPressed:() => signInWithGoogle(context),
                 //icon: Image.asset('assets/google_icon.png', height: 24),
                 label: Text('Sign in with Google'),
                 style: ElevatedButton.styleFrom(

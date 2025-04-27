@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:xspace/pages/SigninPage.dart';
+import 'package:xspace/pages/initPage.dart';
+
 import 'package:firebase_core/firebase_core.dart';
 
 void main() async{
@@ -18,7 +19,7 @@ class MainApp extends StatelessWidget {
     
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: SigninPage(),
+      home: Initpage(),
     );
   }
 }

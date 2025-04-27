@@ -1,7 +1,10 @@
 import 'dart:typed_data';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:xspace/LoadandDecrypt.dart';
 import 'package:xspace/pages/FullscreenImageViewer.dart';
+import 'package:xspace/pages/SigninPage.dart';
 import 'package:xspace/uploadandencrypt.dart';
 import 'package:xspace/utils.dart';
 import 'package:xspace/xauth.dart';
@@ -119,14 +122,33 @@ class _HomepageState extends State<Homepage> {
       ),
       drawer: Drawer(
         child: ListView(
-          children: const [
+          children: [
             DrawerHeader(
-              decoration: BoxDecoration(color: Colors.blue),
+              decoration: BoxDecoration(color: Color.fromARGB(255, 48, 48, 48)),
               child: Text('Menu', style: TextStyle(color: Colors.white, fontSize: 24)),
             ),
             ListTile(
-              leading: Icon(Icons.settings),
-              title: Text('Settings'),
+              leading: const Icon(Icons.exit_to_app_outlined),
+              title: const Text('Sign-Out'),
+              onTap: () async{
+                 try {
+                  final user = FirebaseAuth.instance.currentUser;
+                  if (user != null) {
+                    await GoogleSignIn().signOut();
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (_) => const SigninPage()),
+                    );
+                  }
+                }catch (e) {
+                  if (!mounted) return;
+                  
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Reauthentication failed.')),
+                  );
+                }
+              }
+              
             ),
           ],
         ),
@@ -139,7 +161,7 @@ class _HomepageState extends State<Homepage> {
               shrinkWrap: true, // ✅ Let GridView size itself
               physics: AlwaysScrollableScrollPhysics(), // ✅ Allow scrolling
               controller: _scrollController,
-              itemCount: visibleMedia.length,
+              itemCount: allMetadata.length,
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 3,
                 crossAxisSpacing: 8,
