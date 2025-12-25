@@ -1,5 +1,5 @@
 # xspace/xvault
-xspace or xvault is a privacy first image drive app based on google drive
+xspace or xvault is a privacy first image drive app based on google drive\n
 key features:-
 1. encrypts and decrypts image on users device
 2. encrypted image is stored on gdrive
